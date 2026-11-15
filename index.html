@@ -3612,16 +3612,15 @@ function paintMatch() {
     const isMotmPid = (pid, pName) => !!(M.motm && ((M.motm.player?.id && M.motm.player.id === pid) || (M.motm.pid && M.motm.pid === pid) || (M.motm.playerId && M.motm.playerId === pid) || (M.motm.name && pName && M.motm.name === pName)));
     const ratColorTag = ratNum => ratNum !== null ? (ratNum >= 8.0 ? 'background:#ffd700;color:#3f2e00' : (ratNum >= 7.0 ? 'background:#e3f4e8;color:#0d5929' : (ratNum < 6.0 ? 'background:#ffebee;color:#b71c1c' : 'background:var(--soft)'))) : 'background:var(--soft);color:var(--muted)';
     const ratPitchBg = ratNum => ratNum === null ? '#64748b' : (ratNum >= 8.5 ? '#0284c7' : (ratNum >= 7.5 ? '#16a34a' : (ratNum >= 7.0 ? '#65a30d' : (ratNum >= 6.3 ? '#d97706' : '#dc2626'))));
-    const fmtKm = v => v != null && Number.isFinite(Number(v)) ? (+v).toFixed(2) : '—';
     const fmtSpd = v => v != null && Number.isFinite(Number(v)) ? (+v).toFixed(1) + ' км/ч' : '—';
 
     let playerSectionHtml = '';
     if (mStatsView === 'table') {
-      playerSectionHtml = `<div class="panel wrap"><table><thead><tr><th class="l">Игрок</th><th>Оценка</th><th>Мин</th><th>Г</th><th>П</th><th>Уд</th><th>xG</th><th>Отб</th><th>Сейвы</th><th>Фолы</th><th>ЖК</th><th>КК</th><th>Км</th><th>Макс. ск.</th></tr></thead><tbody>${pl.map(p => {
+      playerSectionHtml = `<div class="panel wrap"><table><thead><tr><th class="l">Игрок</th><th>Оценка</th><th>Мин</th><th>Г</th><th>П</th><th>Уд</th><th>xG</th><th>Отб</th><th>Сейвы</th><th>Фолы</th><th>ЖК</th><th>КК</th><th>Макс. ск.</th></tr></thead><tbody>${pl.map(p => {
         const ratNum = getRatNum(p.id, p);
         const rat = ratNum !== null ? ratNum.toFixed(1) : '—';
         const isMotm = isMotmPid(p.id, p.n);
-        return `<tr><td class="l">${isMotm ? '⭐ ' : ''}<b>${e(p.n)}</b> <span class="muted small">${p.side === 'home' ? e(M.fixture.homeName) : e(M.fixture.awayName)}</span></td><td><span class="tag" style="font-weight:700;${ratColorTag(ratNum)}">${rat}</span></td><td>${p.min}</td><td>${p.g}</td><td>${p.a}</td><td>${p.sh}</td><td>${p.xg}</td><td>${p.tk}</td><td>${p.sv}</td><td>${p.ff}/${p.fa}</td><td>${p.yc}</td><td>${p.rc}</td><td>${fmtKm(p.km)}</td><td>${fmtSpd(p.maxSpeed)}</td></tr>`;
+        return `<tr><td class="l">${isMotm ? '⭐ ' : ''}<b>${e(p.n)}</b> <span class="muted small">${p.side === 'home' ? e(M.fixture.homeName) : e(M.fixture.awayName)}</span></td><td><span class="tag" style="font-weight:700;${ratColorTag(ratNum)}">${rat}</span></td><td>${p.min}</td><td>${p.g}</td><td>${p.a}</td><td>${p.sh}</td><td>${p.xg}</td><td>${p.tk}</td><td>${p.sv}</td><td>${p.ff}/${p.fa}</td><td>${p.yc}</td><td>${p.rc}</td><td>${fmtSpd(p.maxSpeed)}</td></tr>`;
       }).join('')}</tbody></table></div>`;
     } else {
       const subOutMin = {};
@@ -3689,7 +3688,6 @@ function paintMatch() {
         const cardsHtml = `${pStat.rc > 0 ? '<span class="m-pitch-pill-ico" style="background:#dc2626;color:#fff" title="Красная карточка">🟥</span>' : (pStat.yc > 0 ? '<span class="m-pitch-pill-ico" style="background:#fef08a;color:#713f12" title="Жёлтая карточка">🟨</span>' : '')}`;
         const subBadge = outM != null ? `<span class="m-pitch-ev-br" title="Заменён на ${outM}'">🔻${outM}'</span>` : '';
         const telBits = [];
-        if (pStat.km != null) telBits.push(`${(+pStat.km).toFixed(1)}км`);
         if (pStat.maxSpeed != null) telBits.push(`${(+pStat.maxSpeed).toFixed(0)}км/ч`);
         return `<div class="m-pitch-node ${mStatsSelPid === pid ? 'sel' : ''}" data-mstats-pid="${e(pid)}" title="${e(lp.name || pStat.n)} (${e(posLabel)})">
           <div class="m-pitch-avatar">
@@ -3731,7 +3729,6 @@ function paintMatch() {
             if (pStat?.a > 0) badges.push(`🎯${pStat.a}`);
             if (pStat?.yc > 0) badges.push('🟨');
             if (pStat?.rc > 0) badges.push('🟥');
-            if (pStat?.km != null) badges.push(`${(+pStat.km).toFixed(2)} км`);
             if (pStat?.maxSpeed != null) badges.push(`${(+pStat.maxSpeed).toFixed(1)} км/ч`);
             return `<div class="m-pitch-bench-item ${mStatsSelPid === pid ? 'sel' : ''}" data-mstats-pid="${e(pid)}" style="${didPlay ? '' : 'opacity:0.65'}">
               <div style="min-width:0">
@@ -3769,7 +3766,6 @@ function paintMatch() {
             <span class="tag">🧤 Сейвы: <b>${sp.sv}</b></span>
             <span class="tag">✋ Фолы: <b>${sp.ff}/${sp.fa}</b></span>
             <span class="tag">🟨/🟥: <b>${sp.yc}/${sp.rc}</b></span>
-            <span class="tag">🏃 Км: <b>${fmtKm(sp.km)}</b></span>
             <span class="tag">⚡ Макс. ск.: <b>${fmtSpd(sp.maxSpeed)}</b></span>
           </div>` : '<div class="muted small">Игрок не принимал участия в матче.</div>'}
         </div>`;
@@ -4336,15 +4332,15 @@ async function pgLeaders(app) {
 
   if (LD.tab === 'ind') {
     const d = await api('/leaders?comp=' + LD.comp);
-    const PM = [['g', 'Голы'], ['a', 'Передачи'], ['ga', 'Гол+пас'], ['xg', 'xG'], ['sh', 'Удары'], ['tk', 'Отборы'], ['sv', 'Сейвы'], ['cs', 'Сухие матчи'], ['km', 'Километраж (км)'], ['maxSpeed', 'Макс. скорость (км/ч)'], ['ff', 'Фолы (совершил)'], ['fa', 'Фолы (на нём)'], ['yc', 'Жёлтые'], ['rc', 'Красные']];
+    if (LD.metric === 'km') LD.metric = 'g';
+    const PM = [['g', 'Голы'], ['a', 'Передачи'], ['ga', 'Гол+пас'], ['xg', 'xG'], ['sh', 'Удары'], ['tk', 'Отборы'], ['sv', 'Сейвы'], ['cs', 'Сухие матчи'], ['maxSpeed', 'Макс. скорость (км/ч)'], ['ff', 'Фолы (совершил)'], ['fa', 'Фолы (на нём)'], ['yc', 'Жёлтые'], ['rc', 'Красные']];
     const TC = [['m', 'И'], ['g', 'Г'], ['ga', 'ПР'], ['xg', 'xG'], ['xga', 'xGA'], ['co', 'Угл'], ['penF', 'Пен+'], ['penA', 'Пен−'], ['refF', 'Суд+'], ['refA', 'Суд−'], ['fo', 'Фолы'], ['foA', 'Фолы пр.'], ['yc', 'ЖК'], ['rc', 'КК'], ['tk', 'Отб'], ['sv', 'Сейвы'], ['cs', 'Сухие']];
     const playersList = d?.players || [];
     const teamsList = d?.teams || [];
     const pc = [...playersList.reduce((m, x) => {
-      const o = m.get(x.pid) || { ...x, m: 0, km: Number(x.km) || 0, maxSpeed: Number(x.maxSpeed) || 0 };
+      const o = m.get(x.pid) || { ...x, m: 0, maxSpeed: Number(x.maxSpeed) || 0 };
       if (m.has(x.pid)) {
         for (const k of ['min', 'g', 'a', 'yc', 'rc', 'tk', 'sv', 'sh', 'xg', 'ff', 'fa', 'cs', 'm']) o[k] += x[k];
-        o.km = +((o.km || 0) + (Number(x.km) || 0)).toFixed(2);
         o.maxSpeed = +Math.max(o.maxSpeed || 0, Number(x.maxSpeed) || 0).toFixed(1);
       }
       m.set(x.pid, o);
@@ -4354,26 +4350,20 @@ async function pgLeaders(app) {
     const currentMetricObj = PM.find(x => x[0] === LD.metric);
     const metricLabel = currentMetricObj ? currentMetricObj[1] : LD.metric;
     const sortedPlayers = pc.filter(x => {
-      if (LD.metric === 'km') return (+x.km || 0) >= 2;
       if (LD.metric === 'maxSpeed') return (+x.maxSpeed || 0) >= 10;
       return x[LD.metric] > 0;
     }).sort((a, b) => b[LD.metric] - a[LD.metric] || b.min - a.min);
     const fmtLeaderVal = x => {
       if (LD.metric === 'xg') return (+x[LD.metric]).toFixed(2);
-      if (LD.metric === 'km') return (+x.km).toFixed(2) + ' км';
       if (LD.metric === 'maxSpeed') return (+x.maxSpeed).toFixed(1) + ' км/ч';
       return x[LD.metric];
     };
-    const telHint = LD.metric === 'km'
-      ? '<p class="small muted" style="margin:0 0 10px">В таблице отображаются игроки с общим километражем от <b>2.00 км</b> в новых матчах (все данные симуляции сохраняются).</p>'
-      : (LD.metric === 'maxSpeed'
-        ? '<p class="small muted" style="margin:0 0 10px">В таблице отображаются игроки со скоростью от <b>10.0 км/ч</b> в новых матчах (все данные симуляции сохраняются).</p>'
-        : '');
-    const emptyMetricMsg = LD.metric === 'km'
-      ? 'Пока нет игроков с общим километражем от 2 км в новых сыгранных матчах.'
-      : (LD.metric === 'maxSpeed'
-        ? 'Пока нет игроков с максимальной скоростью от 10 км/ч в новых сыгранных матчах.'
-        : 'Пока нет игроков с показателем больше нуля в сыгранных матчах.');
+    const telHint = LD.metric === 'maxSpeed'
+      ? '<p class="small muted" style="margin:0 0 10px">В таблице отображаются игроки со скоростью от <b>10.0 км/ч</b> в новых матчах (все данные симуляции сохраняются).</p>'
+      : '';
+    const emptyMetricMsg = LD.metric === 'maxSpeed'
+      ? 'Пока нет игроков с максимальной скоростью от 10 км/ч в новых сыгранных матчах.'
+      : 'Пока нет игроков с показателем больше нуля в сыгранных матчах.';
 
     tabContent = `
     <div class="tabs"><button data-v="p" class="${LD.view === 'p' ? 'on' : ''}">Игроки</button><button data-v="t" class="${LD.view === 't' ? 'on' : ''}">Команды</button></div>
@@ -5279,6 +5269,7 @@ async function renderTeamStatsView(container, teamId, opts = {}) {
   });
 
   // Sort players
+  if (TEAM_STATS_STATE.playerSort === 'km') TEAM_STATS_STATE.playerSort = 'g';
   const sKey = TEAM_STATS_STATE.playerSort || 'g';
   const sDir = TEAM_STATS_STATE.playerSortDir === 'asc' ? 1 : -1;
   filteredPlayers.sort((a, b) => {
@@ -5623,7 +5614,7 @@ async function renderTeamStatsView(container, teamId, opts = {}) {
           </div>
         </div>
 
-        <div class="scroll-hint"><span>👉 Прокручивайте таблицу вправо (20 показателей)</span></div>
+        <div class="scroll-hint"><span>👉 Прокручивайте таблицу вправо (19 показателей)</span></div>
 
         <div class="wrap" style="overflow-x:auto">
           <table class="ts-table" style="width:100%;font-size:13.5px">
@@ -5647,7 +5638,6 @@ async function renderTeamStatsView(container, teamId, opts = {}) {
                 <th title="Фолы (совершил / на нём)">Фолы</th>
                 <th class="sortable ${sKey === 'yc' ? 'active' : ''}" data-ts-sort="yc" title="Жёлтые карточки" style="color:#d97706">ЖК ${sKey === 'yc' ? (sDir > 0 ? '▲' : '▼') : ''}</th>
                 <th class="sortable ${sKey === 'rc' ? 'active' : ''}" data-ts-sort="rc" title="Красные карточки" style="color:#dc2626">КК ${sKey === 'rc' ? (sDir > 0 ? '▲' : '▼') : ''}</th>
-                <th class="sortable ${sKey === 'km' ? 'active' : ''}" data-ts-sort="km" title="Пройденная дистанция за период (км)">Км ${sKey === 'km' ? (sDir > 0 ? '▲' : '▼') : ''}</th>
                 <th class="sortable ${sKey === 'maxSpeed' ? 'active' : ''}" data-ts-sort="maxSpeed" title="Максимальная скорость (км/ч)">Макс. ск. ${sKey === 'maxSpeed' ? (sDir > 0 ? '▲' : '▼') : ''}</th>
               </tr>
             </thead>
@@ -5681,11 +5671,10 @@ async function renderTeamStatsView(container, teamId, opts = {}) {
                   <td class="muted small">${p.fo}/${p.fa}</td>
                   <td style="color:#d97706;font-weight:600">${p.yc}</td>
                   <td style="color:#dc2626;font-weight:700">${p.rc}</td>
-                  <td>${p.km != null ? (+p.km).toFixed(2) : '—'}</td>
                   <td>${p.maxSpeed != null ? (+p.maxSpeed).toFixed(1) + ' км/ч' : '—'}</td>
                 </tr>`;
               }).join('') : `
-                <tr><td colspan="20" class="empty">Игроки по заданным критериям не найдены.</td></tr>
+                <tr><td colspan="19" class="empty">Игроки по заданным критериям не найдены.</td></tr>
               `}
             </tbody>
           </table>

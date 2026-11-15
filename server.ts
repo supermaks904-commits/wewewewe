@@ -804,7 +804,6 @@ function computeMatchRatings(match, fixture, homeName, awayName) {
       yc,
       rc,
       cs,
-      km: ps.km ?? null,
       maxSpeed: ps.maxSpeed ?? null
     });
   }
@@ -2722,7 +2721,6 @@ try {
     {
       "name": "Точное Имя Фамилия из состава",
       "team": "home" | "away",
-      "km": число (километраж игрока в этом отрезке, км),
       "max_speed": число (максимальная скорость игрока в этом отрезке, км/ч)
     }
   ],
@@ -5419,12 +5417,9 @@ function agg() {
   for (const f of seasonFx()) {
     if (f.status !== "done" || !f.st) continue;
     for (const [pid, s] of Object.entries(f.st.players || {})) {
-      const o = P[f.comp + "|" + pid] ||= { pid, comp: f.comp, n: s.n, t: s.t, logo: teamLogo(s.t), m: 0, km: 0, maxSpeed: 0 };
+      const o = P[f.comp + "|" + pid] ||= { pid, comp: f.comp, n: s.n, t: s.t, logo: teamLogo(s.t), m: 0, maxSpeed: 0 };
       o.m += 1;
       for (const k of ["min", "g", "a", "yc", "rc", "tk", "sv", "sh", "xg", "ff", "fa", "cs"]) add(o, k, s[k] || 0);
-      if (s.km != null && Number.isFinite(Number(s.km))) {
-        o.km = +((o.km || 0) + Number(s.km)).toFixed(2);
-      }
       if (s.maxSpeed != null && Number.isFinite(Number(s.maxSpeed))) {
         o.maxSpeed = +Math.max(o.maxSpeed || 0, Number(s.maxSpeed)).toFixed(1);
       }
@@ -7024,7 +7019,7 @@ ${lineText(ctx, "away")}
   if (mode === "light") {
     u += `
 ФИЗИЧЕСКАЯ ТЕЛЕМЕТРИЯ ИГРОКОВ ЗА МАТЧ (минуты 1–90):
-В JSON добавь поле "player_stats": [{"name": "Точное Имя Фамилия", "team": "home" | "away", "km": число, "max_speed": число}] для каждого игрока обеих команд, выходившего на поле в этом матче. Учитывай позицию, сыгранные минуты (включая вышедших на замену и удалённых), темп игры, усталость и погоду (без выдуманных заглушек).
+В JSON добавь поле "player_stats": [{"name": "Точное Имя Фамилия", "team": "home" | "away", "max_speed": число}] для каждого игрока обеих команд, выходившего на поле в этом матче (без выдуманных заглушек).
 
 Сгенерируй сводку всего матча (минуты 1–90) строго в валидном JSON без markdown-обёртки: {"events":[...],"stats":{...},"player_stats":[...],"note":"..."}. Прематч и поминутная хроника не нужны.`;
     return u;
@@ -7032,8 +7027,7 @@ ${lineText(ctx, "away")}
   const span = b - a + 1;
   u += `
 ФИЗИЧЕСКАЯ ТЕЛЕМЕТРИЯ ИГРОКОВ ЗА ОТРЕЗОК (минуты ${a}–${b}):
-В итоговом JSON обязательно заполни поле "player_stats": [{"name": "Точное Имя Фамилия", "team": "home" | "away", "km": число, "max_speed": число}] для каждого игрока обеих команд, находившегося на поле в отрезке ${a}–${b}.
-• "km" — точный километраж (в км, например 5.34), пробежанный игроком именно за этот отрезок ${a}–${b}, строго исходя из его позиции, фактических минут на поле в этом отрезке (у вышедших на замену/удалённых — пропорционально минутам), темпа, погоды и усталости.
+В итоговом JSON обязательно заполни поле "player_stats": [{"name": "Точное Имя Фамилия", "team": "home" | "away", "max_speed": число}] для каждого игрока обеих команд, находившегося на поле в отрезке ${a}–${b}.
 • "max_speed" — максимальная скорость (в км/ч, например 32.8), достигнутая игроком в этом отрезке.
 
 Сгенерируй отрезок матча (минуты ${a}–${b}) строго в валидном JSON без markdown-обёртки по правилам промпта (раздел 10 — формат вывода). Текст каждого события держи ёмким (1–2 предложения), чтобы весь JSON гарантированно поместился в ответ целиком.`;
@@ -7525,7 +7519,7 @@ function fakePeriod(a, b, ctx, prev) {
   return ev;
 }
 function parseAiPlayerStats(rawStats: any, ctx: any) {
-  const out: Record<string, { km?: number; maxSpeed?: number }> = {};
+  const out: Record<string, { maxSpeed?: number }> = {};
   if (!rawStats || !ctx) return out;
   const idx = indexNames(ctx);
   const items: any[] = Array.isArray(rawStats)
@@ -7540,35 +7534,28 @@ function parseAiPlayerStats(rawStats: any, ctx: any) {
     const side = item.team === "home" || item.team === "away" ? item.team : null;
     const pid = resolve(idx, rawName, side);
     if (!pid) continue;
-    const rawKm = item.km ?? item.distance ?? item.distance_km ?? item.distanceKm;
     const rawSpd = item.max_speed ?? item.maxSpeed ?? item.top_speed ?? item.topSpeed ?? item.speed;
-    const kmNum = rawKm !== void 0 && rawKm !== null && rawKm !== "" ? Number(String(rawKm).replace(",", ".")) : Number.NaN;
     const spdNum = rawSpd !== void 0 && rawSpd !== null && rawSpd !== "" ? Number(String(rawSpd).replace(",", ".")) : Number.NaN;
-    const entry: { km?: number; maxSpeed?: number } = {};
-    if (Number.isFinite(kmNum) && kmNum >= 0 && kmNum <= 22) {
-      entry.km = +kmNum.toFixed(2);
-    }
+    const entry: { maxSpeed?: number } = {};
     if (Number.isFinite(spdNum) && spdNum >= 5 && spdNum <= 45) {
       entry.maxSpeed = +spdNum.toFixed(1);
     }
-    if (entry.km !== void 0 || entry.maxSpeed !== void 0) {
+    if (entry.maxSpeed !== void 0) {
       const prev = out[pid];
       if (!prev) out[pid] = entry;
       else {
-        if (entry.km !== void 0) prev.km = +((prev.km || 0) + entry.km).toFixed(2);
-        if (entry.maxSpeed !== void 0) prev.maxSpeed = +Math.max(prev.maxSpeed || 0, entry.maxSpeed).toFixed(1);
+        prev.maxSpeed = +Math.max(prev.maxSpeed || 0, entry.maxSpeed).toFixed(1);
       }
     }
   }
   return out;
 }
-function mergeAiPlayerStats(a: Record<string, { km?: number; maxSpeed?: number }> | undefined, b: Record<string, { km?: number; maxSpeed?: number }> | undefined) {
-  const res: Record<string, { km?: number; maxSpeed?: number }> = {};
+function mergeAiPlayerStats(a: Record<string, { maxSpeed?: number }> | undefined, b: Record<string, { maxSpeed?: number }> | undefined) {
+  const res: Record<string, { maxSpeed?: number }> = {};
   for (const src of [a, b]) {
     if (!src) continue;
     for (const [pid, v] of Object.entries(src)) {
       const cur = res[pid] ||= {};
-      if (v.km !== void 0) cur.km = +((cur.km || 0) + v.km).toFixed(2);
       if (v.maxSpeed !== void 0) cur.maxSpeed = +Math.max(cur.maxSpeed || 0, v.maxSpeed).toFixed(1);
     }
   }
@@ -7609,7 +7596,7 @@ var LIGHT_SYS_ADD = `
 Это матч нижней лиги: поминутная хроника, прематч (раздел 0) и послематчевые реплики не нужны. Учитывай ВСЕ те же данные и правила (составы, форма, тренеры, схемы, погода, газон, судьи, мотивация, турнирное положение), но верни только итог одним JSON: {"events":[...],"stats":{...},"player_stats":[...],"note":"..."}.
 events — только значимые события всего матча (минуты 1–90): все голы и автоголы (players: [автор, ассистент, если есть]), пенальти, жёлтые и красные карточки, травмы, замены, ошибки судьи/VAR. Не более 30 событий, text — одна короткая строка. Поля min/sec/team/type/players/text — как в разделе 10. Никаких pass/dribble/shot/save/possession.
 stats — {"home":{"shots":int,"shots_on_target":int,"xg":число,"corners":int,"fouls":int,"offsides":int,"tackles":int,"possession":int},"away":{...}}. Цифры согласованы с событиями: удары в створ не меньше голов, удары не меньше ударов в створ, фолов не меньше карточек, владение двух команд в сумме 100.
-player_stats — [{"name":"Точное Имя Фамилия","team":"home"|"away","km":число,"max_speed":число}] для каждого игрока обеих команд, выходившего на поле.
+player_stats — [{"name":"Точное Имя Фамилия","team":"home"|"away","max_speed":число}] для каждого игрока обеих команд, выходившего на поле.
 note — одно предложение об игре. Счёт движок считает по событиям goal/own_goal.`;
 async function genLight(ctx) {
   if (!hasLLM()) return { events: fakePeriod(1, 90, ctx, []), stats: null, playerStats: {}, note: "", fallback: true };
@@ -7820,9 +7807,6 @@ function computeStats(events, ctx, periodTelemetry: any = null) {
       for (const [pid, tele] of Object.entries(seg.players) as any[]) {
         const x = P[pid];
         if (!x || !(x.min > 0)) continue;
-        if (tele.km !== void 0 && Number.isFinite(Number(tele.km))) {
-          x.km = +((x.km || 0) + Number(tele.km) * ratio).toFixed(2);
-        }
         if (tele.maxSpeed !== void 0 && Number.isFinite(Number(tele.maxSpeed))) {
           x.maxSpeed = +Math.max(x.maxSpeed || 0, Number(tele.maxSpeed)).toFixed(1);
         }
@@ -12380,9 +12364,6 @@ function getTeamStats(teamId, query) {
       ratingSum: 0,
       ratingCount: 0,
       avgRating: null,
-      km: null,
-      kmSum: 0,
-      kmCount: 0,
       maxSpeed: null
     });
   }
@@ -12446,9 +12427,6 @@ function getTeamStats(teamId, query) {
           ratingSum: 0,
           ratingCount: 0,
           avgRating: null,
-          km: null,
-          kmSum: 0,
-          kmCount: 0,
           maxSpeed: null
         };
         playersMap.set(pid, pl);
@@ -12480,10 +12458,6 @@ function getTeamStats(teamId, query) {
         pl.ratingSum += ratingsByPid.get(pid) || 0;
         pl.ratingCount += 1;
       }
-      if (s.km != null && Number.isFinite(Number(s.km))) {
-        pl.kmSum = +(pl.kmSum + Number(s.km)).toFixed(2);
-        pl.kmCount += 1;
-      }
       if (s.maxSpeed != null && Number.isFinite(Number(s.maxSpeed))) {
         pl.maxSpeed = pl.maxSpeed === null ? +Number(s.maxSpeed).toFixed(1) : +Math.max(pl.maxSpeed, Number(s.maxSpeed)).toFixed(1);
       }
@@ -12491,11 +12465,8 @@ function getTeamStats(teamId, query) {
   }
   for (const pl of playersMap.values()) {
     pl.avgRating = pl.ratingCount > 0 ? +(pl.ratingSum / pl.ratingCount).toFixed(2) : null;
-    pl.km = pl.kmCount > 0 ? +pl.kmSum.toFixed(2) : null;
     delete pl.ratingSum;
     delete pl.ratingCount;
-    delete pl.kmSum;
-    delete pl.kmCount;
   }
   const playersList = Array.from(playersMap.values()).sort((a, b) => b.g - a.g || b.ga - a.ga || b.min - a.min);
   const topScorer = playersList.filter((p) => p.g > 0).sort((a, b) => b.g - a.g || b.min - a.min)[0] || null;
